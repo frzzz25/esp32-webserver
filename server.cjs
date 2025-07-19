@@ -1,54 +1,61 @@
-const express = require("express");
-const cors = require("cors");
+// server.cjs
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+const bodyParser = require('body-parser');
 
 const app = express();
 app.use(cors());
-app.use(express.json());
+app.use(bodyParser.json());
 
-let ledStates = {
-  blue: "off",
-  white: "off",
-  green: "off",
-};
+// Replace with your real MongoDB Atlas connection string
+const mongoURI = "mongodb+srv://frzzz25:00000000@cluster0.um5zb8e.mongodb.net/esp32?retryWrites=true&w=majority";
+mongoose.connect(mongoURI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true
+})
+.then(() => console.log('MongoDB connected'))
+.catch(err => console.error('MongoDB connection error:', err));
 
-// Serve a simple HTML UI
-app.get("/", (req, res) => {
-  res.send(`
-    <h2>ESP32 LED Controller</h2>
-    <button onclick="fetch('/led/blue/on')">Blue ON</button>
-    <button onclick="fetch('/led/blue/off')">Blue OFF</button><br><br>
-    <button onclick="fetch('/led/white/on')">White ON</button>
-    <button onclick="fetch('/led/white/off')">White OFF</button><br><br>
-    <button onclick="fetch('/led/green/on')">Green ON</button>
-    <button onclick="fetch('/led/green/off')">Green OFF</button>
-    <script>
-      function fetch(url) {
-        const xhr = new XMLHttpRequest();
-        xhr.open("GET", url);
-        xhr.send();
-      }
-    </script>
-  `);
+// Create schema and model
+const logSchema = new mongoose.Schema({
+  type: String,     // IR or LED
+  value: String,    // HIGH, LOW, ON, OFF
+  timestamp: Date
+});
+const Log = mongoose.model('Log', logSchema);
+
+// Route to handle IR logging
+app.post('/log-ir', async (req, res) => {
+  const { irState } = req.body;
+  const log = new Log({
+    type: 'IR',
+    value: irState,
+    timestamp: new Date()
+  });
+  await log.save();
+  res.send({ message: 'IR data logged' });
 });
 
-// Endpoint to update LED state
-app.get("/led/:color/:state", (req, res) => {
-  const { color, state } = req.params;
-  if (["blue", "white", "green"].includes(color) && ["on", "off"].includes(state)) {
-    ledStates[color] = state;
-    console.log(`${color} LED set to ${state}`);
-    return res.send(`Set ${color} LED to ${state}`);
-  } else {
-    return res.status(400).send("Invalid color or state.");
-  }
+// Route to handle LED logging (for future use)
+app.post('/log-led', async (req, res) => {
+  const { ledColor, ledState } = req.body;
+  const log = new Log({
+    type: `LED-${ledColor}`,
+    value: ledState,
+    timestamp: new Date()
+  });
+  await log.save();
+  res.send({ message: 'LED data logged' });
 });
 
-// Endpoint that ESP32 will call to get current state
-app.get("/commands", (req, res) => {
-  res.json(ledStates);
+// Test route
+app.get('/', (req, res) => {
+  res.send('ESP32 Web Server is running!');
 });
 
-const PORT = process.env.PORT || 5000;
+// Start server
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+  console.log(`Server listening on port ${PORT}`);
 });
