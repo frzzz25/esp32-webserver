@@ -1,8 +1,8 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-require('dotenv').config();
 
+// MongoDB models
 const MotionLog = require('./models/motionLog');
 const LedLog = require('./models/ledLog');
 
@@ -13,12 +13,12 @@ const PORT = process.env.PORT || 10000;
 app.use(cors());
 app.use(express.json());
 
-// MongoDB Connection
+// ✅ MongoDB Connection (keep only this one)
 mongoose.connect('mongodb+srv://frzzz25:00000000@cluster0.wku9p4h.mongodb.net/esp32_logs?retryWrites=true&w=majority&appName=Cluster0')
   .then(() => console.log('✅ MongoDB connected'))
   .catch(err => console.error('❌ MongoDB connection error:', err));
 
-// ✅ Root route - Just to test if server is working
+// ✅ Root route for testing
 app.get('/', (req, res) => {
   res.send('✅ ESP32 Server is Running');
 });
@@ -47,6 +47,7 @@ app.post('/api/led', async (req, res) => {
   }
 });
 
+// ✅ Start server (only one app.listen!)
 app.listen(PORT, () => {
   console.log(`🚀 Server is running on port ${PORT}`);
 });
