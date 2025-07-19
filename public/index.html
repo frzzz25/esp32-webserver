@@ -1,73 +1,66 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>ESP32 LED Control</title>
+  <meta charset="UTF-8">
+  <title>ESP32 LED Controller</title>
   <style>
-    body {
-      background: #121212;
-      color: white;
-      font-family: Arial, sans-serif;
-      text-align: center;
-      padding: 30px;
-    }
+    body { font-family: sans-serif; text-align: center; background: #f0f0f0; }
+    h1 { color: #333; }
     button {
-      padding: 15px 30px;
       margin: 10px;
-      font-size: 18px;
+      padding: 15px 30px;
+      font-size: 16px;
       border: none;
-      border-radius: 10px;
+      border-radius: 8px;
       cursor: pointer;
-      transition: 0.3s;
     }
-    .on { background-color: #28a745; color: white; }
-    .off { background-color: #dc3545; color: white; }
+    .on { background-color: #4CAF50; color: white; }
+    .off { background-color: #f44336; color: white; }
   </style>
 </head>
 <body>
-  <h1>ESP32 LED Control Panel</h1>
+  <h1>ESP32 LED Controller</h1>
 
   <div>
-    <h2>🔵 Blue LED (GPIO 18)</h2>
-    <button class="on" onclick="toggleLED('blue', 'on')">Turn ON</button>
-    <button class="off" onclick="toggleLED('blue', 'off')">Turn OFF</button>
+    <h2>Blue LED (GPIO 18)</h2>
+    <button class="on" onclick="controlLED('blue', 'on')">Turn ON</button>
+    <button class="off" onclick="controlLED('blue', 'off')">Turn OFF</button>
   </div>
 
   <div>
-    <h2>⚪ White LED (GPIO 19)</h2>
-    <button class="on" onclick="toggleLED('white', 'on')">Turn ON</button>
-    <button class="off" onclick="toggleLED('white', 'off')">Turn OFF</button>
+    <h2>White LED (GPIO 19)</h2>
+    <button class="on" onclick="controlLED('white', 'on')">Turn ON</button>
+    <button class="off" onclick="controlLED('white', 'off')">Turn OFF</button>
   </div>
 
   <div>
-    <h2>🟢 Green LED (GPIO 21)</h2>
-    <button class="on" onclick="toggleLED('green', 'on')">Turn ON</button>
-    <button class="off" onclick="toggleLED('green', 'off')">Turn OFF</button>
+    <h2>Green LED (GPIO 21)</h2>
+    <button class="on" onclick="controlLED('green', 'on')">Turn ON</button>
+    <button class="off" onclick="controlLED('green', 'off')">Turn OFF</button>
   </div>
 
   <script>
-    // 🔗 Your Render backend URL
-    const SERVER_URL = 'https://esp32-webserver-ge6q.onrender.com';
+    const serverUrl = 'https://esp32-webserver-uhyf.onrender.com';
 
-    async function toggleLED(color, state) {
-      const payload = { color, state };
-      try {
-        const response = await fetch(`${SERVER_URL}/led`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
-        });
-
-        const result = await response.json();
-        alert(`✅ ${color.toUpperCase()} LED turned ${state.toUpperCase()}`);
-        console.log(result);
-      } catch (err) {
-        alert('❌ Error sending command to server');
+    function controlLED(color, state) {
+      fetch(`${serverUrl}/log`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: 'LED',
+          message: `Turned ${state.toUpperCase()} ${color.toUpperCase()} LED`
+        })
+      })
+      .then(res => res.json())
+      .then(data => {
+        console.log(data);
+        alert(`Success: ${color} LED ${state}`);
+      })
+      .catch(err => {
         console.error(err);
-      }
+        alert("❌ Failed to send log.");
+      });
     }
   </script>
 </body>
 </html>
-
