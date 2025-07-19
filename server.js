@@ -3,29 +3,50 @@ const mongoose = require('mongoose');
 const cors = require('cors');
 require('dotenv').config();
 
+const MotionLog = require('./models/motionLog');
+const LedLog = require('./models/ledLog');
+
 const app = express();
-const port = process.env.PORT || 10000;
+const PORT = process.env.PORT || 10000;
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 
 // MongoDB Connection
-mongoose.connect(process.env.MONGODB_URI, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-}).then(() => {
-  console.log('✅ MongoDB connected');
-}).catch((err) => {
-  console.error('❌ MongoDB connection error:', err);
-});
+mongoose.connect('mongodb+srv://frzzz25:00000000@cluster0.wku9p4h.mongodb.net/esp32_logs?retryWrites=true&w=majority&appName=Cluster0')
+  .then(() => console.log('✅ MongoDB connected'))
+  .catch(err => console.error('❌ MongoDB connection error:', err));
 
-// Default route for testing
+// ✅ Root route - Just to test if server is working
 app.get('/', (req, res) => {
   res.send('✅ ESP32 Server is Running');
 });
 
-// Start server
-app.listen(port, () => {
-  console.log(`🚀 Server is running on port ${port}`);
+// ✅ Route to log motion sensor data
+app.post('/api/motion', async (req, res) => {
+  try {
+    const { status } = req.body;
+    const newLog = new MotionLog({ status });
+    await newLog.save();
+    res.json({ message: 'Motion log saved ✅', log: newLog });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to save motion log ❌' });
+  }
+});
+
+// ✅ Route to log LED control events
+app.post('/api/led', async (req, res) => {
+  try {
+    const { color, state } = req.body;
+    const newLog = new LedLog({ color, state });
+    await newLog.save();
+    res.json({ message: 'LED log saved ✅', log: newLog });
+  } catch (err) {
+    res.status(500).json({ error: 'Failed to save LED log ❌' });
+  }
+});
+
+app.listen(PORT, () => {
+  console.log(`🚀 Server is running on port ${PORT}`);
 });
