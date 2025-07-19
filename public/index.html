@@ -4,35 +4,70 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>ESP32 LED Control</title>
+  <style>
+    body {
+      background: #121212;
+      color: white;
+      font-family: Arial, sans-serif;
+      text-align: center;
+      padding: 30px;
+    }
+    button {
+      padding: 15px 30px;
+      margin: 10px;
+      font-size: 18px;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+    .on { background-color: #28a745; color: white; }
+    .off { background-color: #dc3545; color: white; }
+  </style>
 </head>
 <body>
-  <h1>LED Control Panel</h1>
-  <button onclick="controlLED('blue', 'on')">Blue ON</button>
-  <button onclick="controlLED('blue', 'off')">Blue OFF</button>
-  <button onclick="controlLED('white', 'on')">White ON</button>
-  <button onclick="controlLED('white', 'off')">White OFF</button>
-  <button onclick="controlLED('green', 'on')">Green ON</button>
-  <button onclick="controlLED('green', 'off')">Green OFF</button>
+  <h1>ESP32 LED Control Panel</h1>
+
+  <div>
+    <h2>🔵 Blue LED (GPIO 18)</h2>
+    <button class="on" onclick="toggleLED('blue', 'on')">Turn ON</button>
+    <button class="off" onclick="toggleLED('blue', 'off')">Turn OFF</button>
+  </div>
+
+  <div>
+    <h2>⚪ White LED (GPIO 19)</h2>
+    <button class="on" onclick="toggleLED('white', 'on')">Turn ON</button>
+    <button class="off" onclick="toggleLED('white', 'off')">Turn OFF</button>
+  </div>
+
+  <div>
+    <h2>🟢 Green LED (GPIO 21)</h2>
+    <button class="on" onclick="toggleLED('green', 'on')">Turn ON</button>
+    <button class="off" onclick="toggleLED('green', 'off')">Turn OFF</button>
+  </div>
 
   <script>
-    function controlLED(color, action) {
-      fetch(`http://<ESP32_IP>/led?color=${color}&state=${action}`)
-        .then(response => response.text())
-        .then(data => console.log(data))
-        .catch(error => console.error("Error:", error));
+    // 🔗 Your Render backend URL
+    const SERVER_URL = 'https://esp32-webserver-ge6q.onrender.com';
 
-      // Also log this to your backend server
-      fetch('https://esp32-webserver-ge6q.onrender.com/log-led', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-          color: color,
-          state: action
-        })
-      });
+    async function toggleLED(color, state) {
+      const payload = { color, state };
+      try {
+        const response = await fetch(`${SERVER_URL}/led`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+        alert(`✅ ${color.toUpperCase()} LED turned ${state.toUpperCase()}`);
+        console.log(result);
+      } catch (err) {
+        alert('❌ Error sending command to server');
+        console.error(err);
+      }
     }
   </script>
 </body>
 </html>
+
