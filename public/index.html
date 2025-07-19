@@ -4,62 +4,32 @@
   <meta charset="UTF-8">
   <title>ESP32 LED Controller</title>
   <style>
-    body { font-family: sans-serif; text-align: center; background: #f0f0f0; }
-    h1 { color: #333; }
-    button {
-      margin: 10px;
-      padding: 15px 30px;
-      font-size: 16px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-    .on { background-color: #4CAF50; color: white; }
-    .off { background-color: #f44336; color: white; }
+    body { font-family: sans-serif; text-align: center; padding-top: 50px; }
+    button { margin: 10px; padding: 10px 20px; font-size: 16px; }
   </style>
 </head>
 <body>
-  <h1>ESP32 LED Controller</h1>
-
-  <div>
-    <h2>Blue LED (GPIO 18)</h2>
-    <button class="on" onclick="controlLED('blue', 'on')">Turn ON</button>
-    <button class="off" onclick="controlLED('blue', 'off')">Turn OFF</button>
-  </div>
-
-  <div>
-    <h2>White LED (GPIO 19)</h2>
-    <button class="on" onclick="controlLED('white', 'on')">Turn ON</button>
-    <button class="off" onclick="controlLED('white', 'off')">Turn OFF</button>
-  </div>
-
-  <div>
-    <h2>Green LED (GPIO 21)</h2>
-    <button class="on" onclick="controlLED('green', 'on')">Turn ON</button>
-    <button class="off" onclick="controlLED('green', 'off')">Turn OFF</button>
-  </div>
+  <h1>Control LEDs</h1>
+  <button onclick="controlLED(18, 'on')">Blue ON</button>
+  <button onclick="controlLED(18, 'off')">Blue OFF</button><br>
+  <button onclick="controlLED(19, 'on')">White ON</button>
+  <button onclick="controlLED(19, 'off')">White OFF</button><br>
+  <button onclick="controlLED(21, 'on')">Green ON</button>
+  <button onclick="controlLED(21, 'off')">Green OFF</button>
 
   <script>
-    const serverUrl = 'https://esp32-webserver-uhyf.onrender.com';
-
-    function controlLED(color, state) {
-      fetch(`${serverUrl}/log`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          type: 'LED',
-          message: `Turned ${state.toUpperCase()} ${color.toUpperCase()} LED`
-        })
-      })
-      .then(res => res.json())
-      .then(data => {
-        console.log(data);
-        alert(`Success: ${color} LED ${state}`);
-      })
-      .catch(err => {
-        console.error(err);
-        alert("❌ Failed to send log.");
-      });
+    async function controlLED(pin, state) {
+      try {
+        await fetch("http://<RENDER_URL>/log/led", {
+          method: "POST",
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ led: `GPIO ${pin}`, state })
+        });
+        await fetch(`http://<ESP32_IP>/${state}?pin=${pin}`);
+        alert(`GPIO ${pin} turned ${state}`);
+      } catch (err) {
+        alert("❌ Failed: " + err.message);
+      }
     }
   </script>
 </body>

@@ -1,49 +1,48 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-const path = require('path');
 require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const { MongoClient } = require('mongodb');
 
 const app = express();
-const port = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3000;
+const MONGO_URI = process.env.MONGO_URI;
 
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static('public'));
 
-// ✅ MongoDB Connection
-const mongoURI = process.env.MONGODB_URI;
-mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
-    .then(() => console.log("✅ MongoDB Connected"))
-    .catch((err) => console.error("❌ MongoDB connection error:", err));
+let db;
+MongoClient.connect(MONGO_URI)
+  .then(client => {
+    db = client.db('esp32');
+    console.log('✅ Connected to MongoDB');
+  })
+  .catch(err => console.error('❌ MongoDB Error:', err));
 
-// ✅ Schema for logs
-const logSchema = new mongoose.Schema({
-    type: String,
-    value: String,
-    timestamp: { type: Date, default: Date.now }
-});
-const Log = mongoose.model('Log', logSchema);
-
-// ✅ Handle POST from ESP32
-app.post('/api/log', async (req, res) => {
-    const { type, value } = req.body;
-    const newLog = new Log({ type, value });
-    await newLog.save();
-    res.sendStatus(200);
+app.post('/log/led', async (req, res) => {
+  try {
+    const { led, state } = req.body;
+    await db.collection('led_logs').insertOne({
+      led, state, timestamp: new Date()
+    });
+    res.status(200).send('LED log saved');
+  } catch (error) {
+    res.status(500).send('Error logging LED');
+  }
 });
 
-// ✅ Handle GET requests to check logs
-app.get('/api/logs', async (req, res) => {
-    const logs = await Log.find().sort({ timestamp: -1 }).limit(10);
-    res.json(logs);
+app.post('/log/ir', async (req, res) => {
+  try {
+    const { state } = req.body;
+    await db.collection('ir_logs').insertOne({
+      state, timestamp: new Date()
+    });
+    res.status(200).send('IR log saved');
+  } catch (error) {
+    res.status(500).send('Error logging IR');
+  }
 });
 
-// ✅ Serve frontend
-app.get('/', (req, res) => {
-    res.sendFile(path.join(__dirname, 'public/index.html'));
-});
-
-app.listen(port, () => {
-    console.log(`✅ ESP32 Server is Running on port ${port}`);
+app.listen(PORT, () => {
+  console.log(`🚀 Server running on port ${PORT}`);
 });
