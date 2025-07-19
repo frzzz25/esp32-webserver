@@ -1,69 +1,38 @@
-const express = require("express");
-const cors = require("cors");
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ESP32 LED Control</title>
+</head>
+<body>
+  <h1>LED Control Panel</h1>
+  <button onclick="controlLED('blue', 'on')">Blue ON</button>
+  <button onclick="controlLED('blue', 'off')">Blue OFF</button>
+  <button onclick="controlLED('white', 'on')">White ON</button>
+  <button onclick="controlLED('white', 'off')">White OFF</button>
+  <button onclick="controlLED('green', 'on')">Green ON</button>
+  <button onclick="controlLED('green', 'off')">Green OFF</button>
 
-const app = express();
-app.use(cors());
-app.use(express.json());
+  <script>
+    function controlLED(color, action) {
+      fetch(`http://<ESP32_IP>/led?color=${color}&state=${action}`)
+        .then(response => response.text())
+        .then(data => console.log(data))
+        .catch(error => console.error("Error:", error));
 
-// This object stores the LED states
-let ledStates = {
-  blue: "off",
-  white: "off",
-  green: "off",
-};
-
-// HTML interface for controlling LEDs
-app.get("/", (req, res) => {
-  res.send(`
-    <h2>ESP32 LED Controller</h2>
-
-    <button onclick="controlLED('blue','on')">Blue ON</button>
-    <button onclick="controlLED('blue','off')">Blue OFF</button><br><br>
-
-    <button onclick="controlLED('white','on')">White ON</button>
-    <button onclick="controlLED('white','off')">White OFF</button><br><br>
-
-    <button onclick="controlLED('green','on')">Green ON</button>
-    <button onclick="controlLED('green','off')">Green OFF</button><br><br>
-
-    <pre id="status"></pre>
-
-    <script>
-      async function controlLED(color, state) {
-        const url = '/led/' + color + '/' + state;
-        try {
-          const res = await fetch(url);
-          const text = await res.text();
-          document.getElementById("status").innerText = text;
-
-          // Also send to ESP32
-          await fetch('http://192.168.217.109/update?color=' + color + '&state=' + state);
-        } catch (err) {
-          document.getElementById("status").innerText = "Failed to contact server or ESP32.";
-        }
-      }
-    </script>
-  `);
-});
-
-// Store LED state (used by both HTML and ESP32)
-app.get("/led/:color/:state", (req, res) => {
-  const { color, state } = req.params;
-  if (["blue", "white", "green"].includes(color) && ["on", "off"].includes(state)) {
-    ledStates[color] = state;
-    console.log(`${color} LED set to ${state}`);
-    return res.send(`Set ${color} LED to ${state}`);
-  } else {
-    return res.status(400).send("Invalid color or state.");
-  }
-});
-
-// ESP32 calls this to get current LED states
-app.get("/commands", (req, res) => {
-  res.json(ledStates);
-});
-
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+      // Also log this to your backend server
+      fetch('https://esp32-webserver-ge6q.onrender.com/log-led', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          color: color,
+          state: action
+        })
+      });
+    }
+  </script>
+</body>
+</html>
