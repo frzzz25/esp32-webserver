@@ -2,34 +2,29 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>ESP32 LED Controller</title>
+  <title>ESP32 LED Control</title>
   <style>
-    body { font-family: sans-serif; text-align: center; padding-top: 50px; }
-    button { margin: 10px; padding: 10px 20px; font-size: 16px; }
+    body { font-family: Arial; text-align: center; padding: 40px; }
+    button { padding: 12px 20px; margin: 10px; font-size: 18px; }
   </style>
 </head>
 <body>
-  <h1>Control LEDs</h1>
-  <button onclick="controlLED(18, 'on')">Blue ON</button>
-  <button onclick="controlLED(18, 'off')">Blue OFF</button><br>
-  <button onclick="controlLED(19, 'on')">White ON</button>
-  <button onclick="controlLED(19, 'off')">White OFF</button><br>
-  <button onclick="controlLED(21, 'on')">Green ON</button>
-  <button onclick="controlLED(21, 'off')">Green OFF</button>
-
+  <h1>ESP32 LED Controller</h1>
+  <div>
+    <button onclick="toggleLED('blue')">Toggle Blue LED</button>
+    <button onclick="toggleLED('white')">Toggle White LED</button>
+    <button onclick="toggleLED('green')">Toggle Green LED</button>
+  </div>
   <script>
-    async function controlLED(pin, state) {
-      try {
-        await fetch("http://<RENDER_URL>/log/led", {
-          method: "POST",
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ led: `GPIO ${pin}`, state })
-        });
-        await fetch(`http://<ESP32_IP>/${state}?pin=${pin}`);
-        alert(`GPIO ${pin} turned ${state}`);
-      } catch (err) {
-        alert("❌ Failed: " + err.message);
-      }
+    function toggleLED(color) {
+      fetch(`/api/leds/${color}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ action: "toggle" })
+      })
+      .then(res => res.json())
+      .then(data => alert(`✅ ${data.message}`))
+      .catch(err => alert("❌ Error: " + err.message));
     }
   </script>
 </body>

@@ -1,37 +1,33 @@
-// routes/ledRoutes.js
 const express = require("express");
 const router = express.Router();
+const LEDLog = require("../models/LEDLog");
 
-let ledStates = {
-  blue: false,
-  white: false,
-  green: false,
+const ledPins = {
+  blue: 18,
+  white: 19,
+  green: 21
 };
 
-let irLogs = [];
+router.post("/:color", async (req, res) => {
+  const color = req.params.color;
+  const pin = ledPins[color];
 
-router.get("/leds", (req, res) => {
-  res.json(ledStates);
-});
-
-router.post("/leds/:color/:state", (req, res) => {
-  const { color, state } = req.params;
-  if (ledStates.hasOwnProperty(color)) {
-    ledStates[color] = state === "on";
-    res.json({ success: true, color, state: ledStates[color] });
-  } else {
-    res.status(400).json({ error: "Invalid LED color" });
+  if (!pin) {
+    return res.status(400).json({ message: "Invalid LED color" });
   }
-});
 
-router.post("/ir", (req, res) => {
-  const { value } = req.body;
-  irLogs.push({ value, time: new Date() });
-  res.json({ success: true, value });
-});
+  const log = new LEDLog({
+    color,
+    state: "toggled",
+    timestamp: new Date()
+  });
 
-router.get("/logs/ir", (req, res) => {
-  res.json(irLogs);
+  await log.save();
+
+  // Simulate GPIO toggle (replace with real ESP32 endpoint if needed)
+  console.log(`Simulating GPIO toggle on pin ${pin} for ${color} LED`);
+
+  res.json({ message: `${color.toUpperCase()} LED toggled.` });
 });
 
 module.exports = router;

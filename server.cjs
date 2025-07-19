@@ -1,48 +1,37 @@
-require('dotenv').config();
-const express = require('express');
-const cors = require('cors');
-const { MongoClient } = require('mongodb');
+// server.cjs
+const express = require("express");
+const path = require("path");
+const mongoose = require("mongoose");
+const dotenv = require("dotenv");
+
+dotenv.config();
+
+const ledRoutes = require("./routes/ledRoutes");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const MONGO_URI = process.env.MONGO_URI;
 
-app.use(cors());
 app.use(express.json());
-app.use(express.static('public'));
 
-let db;
-MongoClient.connect(MONGO_URI)
-  .then(client => {
-    db = client.db('esp32');
-    console.log('✅ Connected to MongoDB');
-  })
-  .catch(err => console.error('❌ MongoDB Error:', err));
+// Serve static files from public directory
+app.use(express.static(path.join(__dirname, "public")));
 
-app.post('/log/led', async (req, res) => {
-  try {
-    const { led, state } = req.body;
-    await db.collection('led_logs').insertOne({
-      led, state, timestamp: new Date()
-    });
-    res.status(200).send('LED log saved');
-  } catch (error) {
-    res.status(500).send('Error logging LED');
-  }
+// API routes
+app.use("/api/leds", ledRoutes);
+
+// Test route to verify server
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
 });
 
-app.post('/log/ir', async (req, res) => {
-  try {
-    const { state } = req.body;
-    await db.collection('ir_logs').insertOne({
-      state, timestamp: new Date()
-    });
-    res.status(200).send('IR log saved');
-  } catch (error) {
-    res.status(500).send('Error logging IR');
-  }
-});
+// MongoDB connection
+mongoose.connect(process.env.MONGODB_URI, {
+  useNewUrlParser: true,
+  useUnifiedTopology: true,
+})
+.then(() => console.log("✅ Connected to MongoDB"))
+.catch((err) => console.error("❌ MongoDB connection error:", err));
 
 app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+  console.log(`✅ ESP32 Server is Running on port ${PORT}`);
 });
