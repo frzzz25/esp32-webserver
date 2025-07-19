@@ -1,15 +1,14 @@
-const express = require("express");
+const express = require('express');
 const router = express.Router();
-const MotionLog = require("../models/motionLog");
+const MotionLog = require('../models/MotionLog');
 
-router.post("/motion", async (req, res) => {
+router.post('/api/motion', async (req, res) => {
   try {
-    const { value } = req.body;
-    const newLog = new MotionLog({ value });
-    await newLog.save();
-    res.status(201).json({ message: "Motion log saved" });
+    const motionLog = new MotionLog({ status: req.body.status });
+    await motionLog.save();
+    res.json({ message: 'Motion log saved' });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(400).json({ error: err.message });
   }
 });
 

@@ -1,9 +1,10 @@
-// models/motionLog.js
 const mongoose = require('mongoose');
 
 const motionLogSchema = new mongoose.Schema({
-  timestamp: { type: Date, default: Date.now },
-  status: { type: String, enum: ['HIGH', 'LOW'], required: true }
-});
+  status: {
+    type: String,
+    required: true
+  }
+}, { timestamps: true });
 
 module.exports = mongoose.model('MotionLog', motionLogSchema);
