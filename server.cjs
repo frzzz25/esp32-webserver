@@ -1,78 +1,61 @@
 const express = require('express');
-const cors = require('cors');
 const mongoose = require('mongoose');
+const cors = require('cors');
 const bodyParser = require('body-parser');
+const path = require('path');
 
-// SETUP
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// MongoDB Connection
+mongoose.connect('mongodb+srv://frzzz25:00000000@cluster0.aaakpkj.mongodb.net/esp32_logs?retryWrites=true&w=majority')
+  .then(() => console.log('✅ Connected to MongoDB'))
+  .catch((err) => console.error('❌ MongoDB connection error:', err));
+
+// MongoDB Schemas
+const MotionSchema = new mongoose.Schema({
+  state: String,
+  timestamp: { type: Date, default: Date.now }
+});
+const LEDSchema = new mongoose.Schema({
+  color: String,
+  state: String,
+  timestamp: { type: Date, default: Date.now }
+});
+
+const Motion = mongoose.model('motion_logs', MotionSchema);
+const LED = mongoose.model('led_logs', LEDSchema);
+
+// Middleware
 app.use(cors());
 app.use(bodyParser.json());
+app.use(express.static(path.join(__dirname, 'public')));
 
-// MONGODB CONNECTION
-mongoose.connect('mongodb+srv://frzzz25:00000000@cluster0.jjvexwe.mongodb.net/esp32_logs?retryWrites=true&w=majority', {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-})
-.then(() => console.log('✅ MongoDB connected'))
-.catch(err => console.error('❌ MongoDB connection error:', err));
-
-// SCHEMA
-const logSchema = new mongoose.Schema({
-    type: String,
-    value: String,
-    timestamp: { type: Date, default: Date.now }
-});
-
-const Log = mongoose.model('Log', logSchema);
-
-// ROUTES
-
-// TEST
+// Routes
 app.get('/', (req, res) => {
-    res.send('ESP32 Webserver Backend is Running');
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// RECEIVE IR SENSOR DATA
-app.post('/api/ir', async (req, res) => {
-    const { irState } = req.body;
-    try {
-        const log = new Log({ type: 'IR', value: irState });
-        await log.save();
-        console.log('✅ IR data saved:', irState);
-        res.status(201).json({ message: 'IR data saved' });
-    } catch (error) {
-        console.error('❌ Failed to save IR data:', error);
-        res.status(500).json({ error: 'Failed to save IR data' });
-    }
+app.post('/motion', async (req, res) => {
+  try {
+    const motion = new Motion(req.body);
+    await motion.save();
+    res.status(200).json({ message: 'Motion log saved' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to save motion log' });
+  }
 });
 
-// RECEIVE LED CONTROL
-app.post('/api/led', async (req, res) => {
-    const { color, state } = req.body;
-    try {
-        const log = new Log({ type: `LED-${color}`, value: state });
-        await log.save();
-        console.log(`✅ LED ${color} is now ${state}`);
-        res.status(201).json({ message: 'LED state saved' });
-    } catch (error) {
-        console.error('❌ Failed to save LED state:', error);
-        res.status(500).json({ error: 'Failed to save LED state' });
-    }
+app.post('/led', async (req, res) => {
+  try {
+    const led = new LED(req.body);
+    await led.save();
+    res.status(200).json({ message: 'LED log saved' });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to save LED log' });
+  }
 });
 
-// GET ALL LOGS
-app.get('/api/logs', async (req, res) => {
-    try {
-        const logs = await Log.find().sort({ timestamp: -1 }).limit(100);
-        res.json(logs);
-    } catch (error) {
-        console.error('❌ Failed to fetch logs:', error);
-        res.status(500).json({ error: 'Failed to fetch logs' });
-    }
-});
-
-// START SERVER
 app.listen(PORT, () => {
-    console.log(`🚀 Server running at http://localhost:${PORT}`);
+  console.log(`🚀 Server is running on port ${PORT}`);
 });
